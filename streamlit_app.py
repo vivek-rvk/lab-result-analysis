@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
+import numpy as np
 import math
 
 st.set_page_config(page_title="Lab Result Analysis", layout="centered")
@@ -11,7 +12,7 @@ st.title("📊 Laboratory Result Analysis Tool")
 st.write(
     "Upload the formatted Excel file to generate "
     "**Marks Distribution**, **Grade Distribution**, and "
-    "**Histogram Table**."
+    "**Histogram Table (10-mark intervals)**."
 )
 
 uploaded_file = st.file_uploader(
@@ -58,26 +59,16 @@ if uploaded_file is not None:
     grade_counts = marks_df["Grade"].value_counts().reindex(grade_order, fill_value=0)
 
     # -------------------------------------------------
-    # Histogram table calculation (NEW)
+    # Histogram calculation (EXACT & CONSISTENT)
     # -------------------------------------------------
-    bins = list(range(0, 101, 10))
-    labels = [f"{bins[i]}–{bins[i+1]}" for i in range(len(bins) - 1)]
+    bins = np.arange(0, 101, 10)   # 0–10, 10–20, ..., 90–100
+    counts, _ = np.histogram(marks_df["Total"], bins=bins)
 
-    marks_df["Histogram Range"] = pd.cut(
-        marks_df["Total"],
-        bins=bins,
-        right=False,          # [0–10), [10–20), ...
-        labels=labels
-    )
-
-    histogram = (
-        marks_df["Histogram Range"]
-        .value_counts()
-        .sort_index()
-        .reset_index()
-    )
-
-    histogram.columns = ["Marks Range", "Number of Students"]
+    # Create histogram DataFrame
+    histogram = pd.DataFrame({
+        "Marks Range": [f"{bins[i]}–{bins[i+1]}" for i in range(len(bins)-1)],
+        "Number of Students": counts
+    })
 
     # -------------------------------------------------
     # Plot setup
@@ -85,14 +76,14 @@ if uploaded_file is not None:
     fig, axes = plt.subplots(2, 1, figsize=(8, 10))
     y_major = 5
 
-    # -----------------------------
-    # Fig (a): Marks Distribution
-    # -----------------------------
-    counts, _, _ = axes[0].hist(
-        marks_df["Total"],
-        bins=bins,
-        align="left",
-        rwidth=1.0,
+    # =================================================
+    # Fig (a): Marks Distribution (BAR, NOT HIST)
+    # =================================================
+    axes[0].bar(
+        bins[:-1],          # left edges
+        counts,
+        width=10,
+        align="edge",
         color="tab:blue",
         edgecolor="black"
     )
@@ -112,10 +103,15 @@ if uploaded_file is not None:
     axes[0].grid(which="major", linestyle="--", alpha=0.7)
     axes[0].grid(which="minor", linestyle=":", alpha=0.4)
 
-    # -----------------------------
+    # =================================================
     # Fig (b): Grade Distribution
-    # -----------------------------
-    axes[1].bar(grade_counts.index, grade_counts.values, color="tab:orange")
+    # =================================================
+    axes[1].bar(
+        grade_counts.index,
+        grade_counts.values,
+        color="tab:orange",
+        edgecolor="black"
+    )
 
     axes[1].set_xlabel("Grade")
     axes[1].set_ylabel("Number of Students")
@@ -145,6 +141,6 @@ if uploaded_file is not None:
 
     st.pyplot(fig)
 
-
+    
 else:
     st.info("Please upload the Excel file to proceed.")
