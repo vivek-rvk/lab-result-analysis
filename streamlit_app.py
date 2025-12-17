@@ -70,7 +70,7 @@ if uploaded_file is not None:
     counts, _, _ = axes[0].hist(
         marks_df["Total"],
         bins=bins,
-        color="tab:orange",
+        color="tab:blue",
         edgecolor="black",
         align="left"
     )
