@@ -59,11 +59,20 @@ if uploaded_file is not None:
         edgecolor="black"
     )
 
+    # Define bins explicitly for 10-mark intervals
+    bins = list(range(0, 110, 10))  # 0,10,20,...,100
+    
+    counts, _, _ = axes[0].hist(
+        marks_df["Total"],
+        bins=bins,
+        edgecolor="black"
+    )
+
     axes[0].set_xlim(0, 100)
     axes[0].set_xlabel("Marks Secured")
     axes[0].set_ylabel("Number of Students")
-    axes[0].set_title("(a) Marks Distribution")
-
+    axes[0].set_title("(a) Marks Distribution (10-mark intervals)")
+    
     ymax_a = math.ceil(max(counts) / y_major) * y_major
     axes[0].set_ylim(0, ymax_a)
 
