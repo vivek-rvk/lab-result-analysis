@@ -10,7 +10,8 @@ st.title("📊 Laboratory Result Analysis Tool")
 
 st.write(
     "Upload the formatted Excel file to generate "
-    "**Marks Distribution** and **Grade Distribution** plots."
+    "**Marks Distribution**, **Grade Distribution**, and "
+    "**Histogram Table**."
 )
 
 uploaded_file = st.file_uploader(
@@ -20,17 +21,17 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    # -----------------------------
+    # -------------------------------------------------
     # Read Excel sheets
-    # -----------------------------
+    # -------------------------------------------------
     course_info_df = pd.read_excel(uploaded_file, sheet_name="Course_Info")
     marks_df = pd.read_excel(uploaded_file, sheet_name="Marks")
 
     course_info = dict(zip(course_info_df["Field"], course_info_df["Value"]))
 
-    # -----------------------------
+    # -------------------------------------------------
     # Grade assignment
-    # -----------------------------
+    # -------------------------------------------------
     def assign_grade(marks):
         if pd.isna(marks):
             return "F"
@@ -56,38 +57,55 @@ if uploaded_file is not None:
     grade_order = ["O", "A+", "A", "B+", "B", "C", "P", "F"]
     grade_counts = marks_df["Grade"].value_counts().reindex(grade_order, fill_value=0)
 
-    # -----------------------------
+    # -------------------------------------------------
+    # Histogram table calculation (NEW)
+    # -------------------------------------------------
+    bins = list(range(0, 101, 10))
+    labels = [f"{bins[i]}–{bins[i+1]}" for i in range(len(bins) - 1)]
+
+    marks_df["Histogram Range"] = pd.cut(
+        marks_df["Total"],
+        bins=bins,
+        right=False,          # [0–10), [10–20), ...
+        labels=labels
+    )
+
+    histogram = (
+        marks_df["Histogram Range"]
+        .value_counts()
+        .sort_index()
+        .reset_index()
+    )
+
+    histogram.columns = ["Marks Range", "Number of Students"]
+
+    # -------------------------------------------------
     # Plot setup
-    # -----------------------------
+    # -------------------------------------------------
     fig, axes = plt.subplots(2, 1, figsize=(8, 10))
     y_major = 5
 
     # -----------------------------
     # Fig (a): Marks Distribution
     # -----------------------------
-    bins = list(range(0, 101, 10))  # 0–10, 10–20, ..., 90–100
-
     counts, _, _ = axes[0].hist(
         marks_df["Total"],
         bins=bins,
-        align="left",        # 🔴 critical
-        rwidth=1.0,          # 🔴 critical
+        align="left",
+        rwidth=1.0,
         color="tab:blue",
         edgecolor="black"
     )
 
     axes[0].set_xlim(0, 100)
-    axes[0].set_xticks(bins)        # 🔴 critical
+    axes[0].set_xticks(bins)
     axes[0].set_xlabel("Marks Secured")
     axes[0].set_ylabel("Number of Students")
     axes[0].set_title("(a) Marks Distribution (10-mark intervals)")
 
-
     ymax_a = math.ceil(max(counts) / y_major) * y_major
     axes[0].set_ylim(0, ymax_a)
 
-    axes[0].xaxis.set_major_locator(MultipleLocator(10))
-    axes[0].xaxis.set_minor_locator(MultipleLocator(10))
     axes[0].yaxis.set_major_locator(MultipleLocator(y_major))
     axes[0].yaxis.set_minor_locator(MultipleLocator(y_major / 2))
 
@@ -97,7 +115,7 @@ if uploaded_file is not None:
     # -----------------------------
     # Fig (b): Grade Distribution
     # -----------------------------
-    axes[1].bar(grade_counts.index, grade_counts.values, color="tab:blue")
+    axes[1].bar(grade_counts.index, grade_counts.values, color="tab:orange")
 
     axes[1].set_xlabel("Grade")
     axes[1].set_ylabel("Number of Students")
@@ -112,9 +130,9 @@ if uploaded_file is not None:
     axes[1].grid(which="major", linestyle="--", alpha=0.7)
     axes[1].grid(which="minor", linestyle=":", alpha=0.4)
 
-    # -----------------------------
+    # -------------------------------------------------
     # Overall title
-    # -----------------------------
+    # -------------------------------------------------
     fig.suptitle(
         f"Result Analysis – {course_info['Course Code and Name']}\n"
         f"Academic Year: {course_info['Academic Year']} | "
@@ -126,6 +144,12 @@ if uploaded_file is not None:
     plt.tight_layout(rect=[0, 0, 1, 0.93])
 
     st.pyplot(fig)
+
+    # -------------------------------------------------
+    # Display tables
+    # -------------------------------------------------
+    st.subheader("📋 Histogram Table (10-mark intervals)")
+    st.dataframe(histogram, use_container_width=True)
 
     with st.expander("📄 View Student Marks & Grades"):
         st.dataframe(marks_df)
