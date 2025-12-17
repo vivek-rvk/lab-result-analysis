@@ -20,11 +20,17 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
+    # -----------------------------
+    # Read Excel sheets
+    # -----------------------------
     course_info_df = pd.read_excel(uploaded_file, sheet_name="Course_Info")
     marks_df = pd.read_excel(uploaded_file, sheet_name="Marks")
 
     course_info = dict(zip(course_info_df["Field"], course_info_df["Value"]))
 
+    # -----------------------------
+    # Grade assignment
+    # -----------------------------
     def assign_grade(marks):
         if pd.isna(marks):
             return "F"
@@ -50,32 +56,34 @@ if uploaded_file is not None:
     grade_order = ["O", "A+", "A", "B+", "B", "C", "P", "F"]
     grade_counts = marks_df["Grade"].value_counts().reindex(grade_order, fill_value=0)
 
+    # -----------------------------
+    # Plot setup
+    # -----------------------------
     fig, axes = plt.subplots(2, 1, figsize=(8, 10))
     y_major = 5
 
-    counts, _, _ = axes[0].hist(
-        marks_df["Total"],
-        bins=10,
-        edgecolor="black"
-    )
+    # -----------------------------
+    # Fig (a): Marks Distribution
+    # -----------------------------
+    bins = list(range(0, 101, 10))  # 0–10, 10–20, ..., 90–100
 
-    # Define bins explicitly for 10-mark intervals
-    bins = list(range(0, 110, 10))  # 0,10,20,...,100
-    
     counts, _, _ = axes[0].hist(
         marks_df["Total"],
         bins=bins,
-        edgecolor="black"
+        color="tab:orange",
+        edgecolor="black",
+        align="left"
     )
 
     axes[0].set_xlim(0, 100)
     axes[0].set_xlabel("Marks Secured")
     axes[0].set_ylabel("Number of Students")
     axes[0].set_title("(a) Marks Distribution (10-mark intervals)")
-    
+
     ymax_a = math.ceil(max(counts) / y_major) * y_major
     axes[0].set_ylim(0, ymax_a)
 
+    axes[0].xaxis.set_major_locator(MultipleLocator(10))
     axes[0].xaxis.set_minor_locator(MultipleLocator(10))
     axes[0].yaxis.set_major_locator(MultipleLocator(y_major))
     axes[0].yaxis.set_minor_locator(MultipleLocator(y_major / 2))
@@ -83,7 +91,10 @@ if uploaded_file is not None:
     axes[0].grid(which="major", linestyle="--", alpha=0.7)
     axes[0].grid(which="minor", linestyle=":", alpha=0.4)
 
-    axes[1].bar(grade_counts.index, grade_counts.values)
+    # -----------------------------
+    # Fig (b): Grade Distribution
+    # -----------------------------
+    axes[1].bar(grade_counts.index, grade_counts.values, color="tab:blue")
 
     axes[1].set_xlabel("Grade")
     axes[1].set_ylabel("Number of Students")
@@ -98,6 +109,9 @@ if uploaded_file is not None:
     axes[1].grid(which="major", linestyle="--", alpha=0.7)
     axes[1].grid(which="minor", linestyle=":", alpha=0.4)
 
+    # -----------------------------
+    # Overall title
+    # -----------------------------
     fig.suptitle(
         f"Result Analysis – {course_info['Course Code and Name']}\n"
         f"Academic Year: {course_info['Academic Year']} | "
