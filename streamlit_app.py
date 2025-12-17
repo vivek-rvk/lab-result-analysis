@@ -145,14 +145,6 @@ if uploaded_file is not None:
 
     st.pyplot(fig)
 
-    # -------------------------------------------------
-    # Display tables
-    # -------------------------------------------------
-    st.subheader("📋 Histogram Table (10-mark intervals)")
-    st.dataframe(histogram, use_container_width=True)
-
-    with st.expander("📄 View Student Marks & Grades"):
-        st.dataframe(marks_df)
 
 else:
     st.info("Please upload the Excel file to proceed.")
